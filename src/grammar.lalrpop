@@ -1,0 +1,21 @@
+use std::str::FromStr;
+use crate::ast;
+use crate::ast::Expr;
+
+
+grammar;
+
+pub Term: String = {
+    r"[a-z]+" => String::from_str(<>).unwrap(),
+};
+pub Int: i64 = {
+    r"\d+" => <>.parse::<i64>().unwrap(),
+};
+pub Expr: Expr = {Universe, Lam, Pi, Var, App};
+
+
+pub Var: Expr = <t:Term>"_"<i:Int> => ast::Expr::Var(t.to_string(), i);  
+pub Universe: Expr = r"\*\d+"  => ast::Expr::Universe(ast::skip_first_char(<>).parse::<i64>().unwrap());  
+pub Lam: Expr = "λ" <var:Term> <i:Int> "." <expr:Expr> => ast::Expr::Lam(var.to_string(), i, Box::new(expr));  
+pub Pi: Expr = "Π" <var:Term> <i:Int> "." <expr:Expr> => ast::Expr::Pi(var.to_string(), i, Box::new(expr));  
+pub App: Expr =  r"\s+" <f:Expr> r"\s+" <s:Expr> r"\s+" => ast::Expr::App(Box::new(f), Box::new(s));
