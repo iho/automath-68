@@ -1,7 +1,8 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Expr {
-    Var(String),
-    AngleBracket(Box<String>, Box<Option<Expr>>),
-    SquareBrackets(Box<Option<String>>, Box<Option<Expr>>, Box<Option<Expr>>),
-    RoundBrackets(Box<String>, Box<Option<Expr>>, Vec<(Box<Option<Expr>>, Box<Option<String>>)>),
+pub enum Henk {
+    Universe(i64),
+    Variable(String),
+    Application(Box<Henk>, Box<Henk>),
+    Lambda(String, Box<Henk>, Box<Henk>),
+    Forall(String, Box<Henk>, Box<Henk>)
 }
