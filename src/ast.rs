@@ -1,8 +1,7 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr {
-    Star,
     Var(String),
-    AngleBracket(String),
-    SquareBrackets(String, Box<Expr>),
-    RoundBrackets(String, Box<Expr>, Option<Box<Expr>>),
+    AngleBracket(Box<String>, Box<Option<Expr>>),
+    SquareBrackets(Box<Option<String>>, Box<Option<Expr>>, Box<Option<Expr>>),
+    RoundBrackets(Box<String>, Box<Option<Expr>>, Vec<(Box<Option<Expr>>, Box<Option<String>>)>),
 }

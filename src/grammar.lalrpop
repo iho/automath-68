@@ -4,6 +4,22 @@ use crate::ast::Expr;
 grammar;
 
 
+
+match {
+    "(",
+    ")",
+    "[",
+    "]",
+    "<",
+    ">",
+    ",",
+    r"[a-zA-Z0-9_']+",
+    ":",
+
+    // Skip whitespace
+    r"\s*" => { },
+}
+
 pub Expr: Expr = {
     #[precedence(level="0")] 
     Var,
@@ -11,53 +27,43 @@ pub Expr: Expr = {
     AngleBrackets,
     #[precedence(level="2")] #[assoc(side="left")] 
     SquareBrackets,
-    #[precedence(level="3")] #[assoc(side="left")]
+    #[precedence(level="3")] #[assoc(side="right")]
     RoundBrackets,
 };
 
 
-// pub Body: Expr = {
+// Star: Expr = {
+//     "*" => ast::Expr::Star
 // };
 
-Star: Expr = {
-    "*" => ast::Expr::Star
-};
-
 Var: Expr = {
-    <b:Brackets><name:Name> => ast::Expr::Var(name),
+    <name:Name> => ast::Expr::Var(name),
 };
 
 Name: String = {
     r"[a-zA-Z0-9_']+" => <>.to_string()
 };
 
-
-Brackets: Expr = {
-    SquareBrackets,
-    AngleBrackets,
-    RoundBrackets,
+Brackets: Expr = { 
+  SquareBrackets,
+  AngleBrackets,
+  RoundBrackets,
 };
 
-
-
-
 SquareBrackets: Expr = {
-  "[" <b:Brackets> <name:Name> ":" <name2:Expr> "]" => ast::Expr::SquareBrackets(name, Box::new(name2)),
-  "["  <name:Name> ":" <name2:Expr> "]" => ast::Expr::SquareBrackets(name, Box::new(name2)),
-  "["  <name:Name> ":" <name2:Name> "]" => ast::Expr::SquareBrackets(name, Box::new(ast::Expr::Var(name2))),
-  "[" <b:Brackets> <name:Name> "," <name2:Expr> "]" => ast::Expr::SquareBrackets(name,Box::new(name2)),
-  "[" <name:Name> "," <name2:Expr> "]" => ast::Expr::SquareBrackets(name,Box::new(name2)),
+  "[" <b:Brackets?> <name:Name?> "," <b2:Brackets?> <name2:Name?> "]" => ast::Expr::SquareBrackets(Box::new(name), Box::new(b), Box::new(b2)),
+  "[" <b:Brackets?> <name:Name?>  "]" => ast::Expr::SquareBrackets(Box::new(name), Box::new(b), Box::new(None)),
 };
 
 AngleBrackets: Expr = {
-  "<"  <b:Brackets><name:Name> ">" => ast::Expr::AngleBracket(name),
-  "<"  <name:Name> ">" => ast::Expr::AngleBracket(name),
+  "<"  <b:Brackets?><name:Name> ">" => ast::Expr::AngleBracket(Box::new(name), Box::new(b)),
 };
 
 RoundBrackets: Expr = {
-  <name:Name> "(" <b:Brackets> <e:Expr> ")" => ast::Expr::RoundBrackets(name, Box::new(e), Some(Box::new(b))),
-  <name:Name> "(" <b:Brackets> <e:Expr> "," <e2:Expr> ")" => ast::Expr::RoundBrackets(name, Box::new(e), Some(Box::new(b))),
-  <name:Name> "(" <b:Brackets> <e:Expr> "," <b2:Brackets>  <e2:Expr> ")" => ast::Expr::RoundBrackets(name, Box::new(e), Some(Box::new(b))),
-  <name:Name> "("  <e:Expr> ")" => ast::Expr::RoundBrackets(name, Box::new(e), None),
-  <name:Name> "("  <e:Expr> "," <e2:Expr> ")" => ast::Expr::RoundBrackets(name, Box::new(e), None),
+  <b0:Brackets?> <name:Name> "(" <b:Brackets?> <e:Name?> ")" => 
+  ast::Expr::RoundBrackets(Box::new(name), Box::new(b0), vec![(Box::new(b), Box::new(e))]),
+  <b0:Brackets?> <name:Name> "(" <b:Brackets?> <e:Name?> "," <b2:Brackets?> <e2:Name?>  ")" => 
+  ast::Expr::RoundBrackets(Box::new(name), Box::new(b0), vec![(Box::new(b), Box::new(e)), (Box::new(b2), Box::new(e2))]),
+  <b0:Brackets?> <name:Name> "(" <b:Brackets?> <e:Name?> "," <b2:Brackets?> <e2:Name?>  "," <b3:Brackets?> <e3:Name?>  ")" => 
+  ast::Expr::RoundBrackets(Box::new(name), Box::new(b0), vec![(Box::new(b), Box::new(e)), (Box::new(b2), Box::new(e2)), (Box::new(b3), Box::new(e3))]),
 };
