@@ -1,21 +1,63 @@
-use std::str::FromStr;
 use crate::ast;
 use crate::ast::Expr;
 
-
 grammar;
 
-pub Term: String = {
-    r"[a-z]+" => String::from_str(<>).unwrap(),
+
+pub Expr: Expr = {
+    #[precedence(level="0")] 
+    Var,
+    #[precedence(level="1")] #[assoc(side="left")]
+    AngleBrackets,
+    #[precedence(level="2")] #[assoc(side="left")] 
+    SquareBrackets,
+    #[precedence(level="3")] #[assoc(side="left")]
+    RoundBrackets,
 };
-pub Int: i64 = {
-    r"\d+" => <>.parse::<i64>().unwrap(),
-};
-pub Expr: Expr = {Universe, Lam, Pi, Var, App};
 
 
-pub Var: Expr = <t:Term>"_"<i:Int> => ast::Expr::Var(t.to_string(), i);  
-pub Universe: Expr = r"\*\d+"  => ast::Expr::Universe(ast::skip_first_char(<>).parse::<i64>().unwrap());  
-pub Lam: Expr = "λ" <var:Term> <i:Int> "." <expr:Expr> => ast::Expr::Lam(var.to_string(), i, Box::new(expr));  
-pub Pi: Expr = "Π" <var:Term> <i:Int> "." <expr:Expr> => ast::Expr::Pi(var.to_string(), i, Box::new(expr));  
-pub App: Expr =  r"\s+" <f:Expr> r"\s+" <s:Expr> r"\s+" => ast::Expr::App(Box::new(f), Box::new(s));
+// pub Body: Expr = {
+// };
+
+Star: Expr = {
+    "*" => ast::Expr::Star
+};
+
+Var: Expr = {
+    <b:Brackets><name:Name> => ast::Expr::Var(name),
+};
+
+Name: String = {
+    r"[a-zA-Z0-9_']+" => <>.to_string()
+};
+
+
+Brackets: Expr = {
+    SquareBrackets,
+    AngleBrackets,
+    RoundBrackets,
+};
+
+
+
+
+SquareBrackets: Expr = {
+  "[" <b:Brackets> <name:Name> ":" <name2:Expr> "]" => ast::Expr::SquareBrackets(name, Box::new(name2)),
+  "["  <name:Name> ":" <name2:Expr> "]" => ast::Expr::SquareBrackets(name, Box::new(name2)),
+  "["  <name:Name> ":" <name2:Name> "]" => ast::Expr::SquareBrackets(name, Box::new(ast::Expr::Var(name2))),
+  "[" <b:Brackets> <name:Name> "," <name2:Expr> "]" => ast::Expr::SquareBrackets(name,Box::new(name2)),
+  "[" <name:Name> "," <name2:Expr> "]" => ast::Expr::SquareBrackets(name,Box::new(name2)),
+};
+
+AngleBrackets: Expr = {
+  "<"  <b:Brackets><name:Name> ">" => ast::Expr::AngleBracket(name),
+  "<"  <name:Name> ">" => ast::Expr::AngleBracket(name),
+};
+
+RoundBrackets: Expr = {
+  <name:Name> "(" <b:Brackets> <e:Expr> ")" => ast::Expr::RoundBrackets(name, Box::new(e), Some(Box::new(b))),
+  <name:Name> "(" <b:Brackets> <e:Expr> "," <e2:Expr> ")" => ast::Expr::RoundBrackets(name, Box::new(e), Some(Box::new(b))),
+  <name:Name> "(" <b:Brackets> <e:Expr> "," <b2:Brackets>  <e2:Expr> ")" => ast::Expr::RoundBrackets(name, Box::new(e), Some(Box::new(b))),
+  <name:Name> "("  <e:Expr> ")" => ast::Expr::RoundBrackets(name, Box::new(e), None),
+  <name:Name> "("  <e:Expr> "," <e2:Expr> ")" => ast::Expr::RoundBrackets(name, Box::new(e), None),
+};
