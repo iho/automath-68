@@ -3,12 +3,12 @@ use crate::ast::Henk;
 grammar; // AUT-68 = U | I | [ I : PTS ) PTS | ( I : PTS ) PTS | PTS PTS | ( PTS ) | PTS -> PTS
 
 Name:      String = { r"[a-zA-Z][a-zA-Z\d]*" => <>.to_string() };
-Universe:    Henk = { <n:r"\*[\d]+"> => Henk::Universe(i64::from_str_radix(n,10).unwrap()), <n:r"\*"> => Henk::Universe(0), };
-Variable:    Henk = { <n:Name> => Henk::Variable(n), };
+Universe:    Henk = { <n:r"\*[\d]+"> => Henk::U(i64::from_str_radix(n,10).unwrap()), <n:r"\*"> => Henk::U(0), };
+Variable:    Henk = { <n:Name> => Henk::Var(n), };
 Unit:        Henk = { <l:"("> <e:Expr> <r:")"> => e, };
-Lambda:      Henk = { <l:"("> <v:Name> <s:":"> <t:Expr> <r:")"> <e:LExpr> => Henk::Lambda(v,Box::new(t),Box::new(e)), };
-Forall:      Henk = { <l:"["> <v:Name> <s:":"> <t:Expr> <r:"]"> <e:LExpr> => Henk::Forall(v,Box::new(t),Box::new(e)), };
+Lambda:      Henk = { <l:"("> <v:Name> <s:":"> <t:Expr> <r:")"> <e:LExpr> => Henk::Lam(v,Box::new(t),Box::new(e)), };
+Forall:      Henk = { <l:"["> <v:Name> <s:":"> <t:Expr> <r:"]"> <e:LExpr> => Henk::Pi(v,Box::new(t),Box::new(e)), };
 LExpr:       Henk = { Variable, Universe, Unit, Lambda, Forall, };
-Application: Henk = { <l:Expr> <r:LExpr> => Henk::Application(Box::new(l),Box::new(r)), };
-Arrow:       Henk = { <t:Expr> <a:"->"> <e:LExpr> => Henk::Forall("".to_string(),Box::new(t),Box::new(e)), };
+Application: Henk = { <l:Expr> <r:LExpr> => Henk::App(Box::new(l),Box::new(r)), };
+Arrow:       Henk = { <t:Expr> <a:"->"> <e:LExpr> => Henk::Pi("".to_string(),Box::new(t),Box::new(e)), };
 pub    Expr: Henk = { Universe, Variable, Arrow, Application, Lambda, Forall, Unit, };

@@ -1,8 +1,8 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Henk {
-    Universe(i64),
-    Variable(String),
-    Application(Box<Henk>, Box<Henk>),
-    Lambda(String, Box<Henk>, Box<Henk>),
-    Forall(String, Box<Henk>, Box<Henk>)
+    U(i64),
+    Var(String),
+    App(Box<Henk>, Box<Henk>),
+    Lam(String, Box<Henk>, Box<Henk>),
+    Pi(String, Box<Henk>, Box<Henk>)
 }
