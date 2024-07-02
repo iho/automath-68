@@ -1,6 +1,6 @@
 
 use crate::ast::Henk;
-grammar; // AUT-68 = U | I | [ I : PTS ) PTS | ( I : PTS ) PTS | PTS PTS | ( PTS ) | PTS -> PTS
+grammar; // AUT = U | V | [ V : AUT ) AUT | ( V : AUT ) AUT | AUT AUT | ( AUT ) | AUT -> AUT
 
 Name:      String = { r"[a-zA-Z][a-zA-Z\d]*" => <>.to_string() };
 Universe:    Henk = { <n:r"\*[\d]+"> => Henk::U(i64::from_str_radix(n,10).unwrap()), <n:r"\*"> => Henk::U(0), };
