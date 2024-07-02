@@ -1,69 +1,14 @@
-use crate::ast;
-use crate::ast::Expr;
 
-grammar;
+use crate::ast::Henk;
+grammar; // AUT-68 = U | I | [ I : PTS ) PTS | ( I : PTS ) PTS | PTS PTS | ( PTS ) | PTS -> PTS
 
-
-
-match {
-    "(",
-    ")",
-    "[",
-    "]",
-    "<",
-    ">",
-    ",",
-    r"[a-zA-Z0-9_']+",
-    ":",
-
-    // Skip whitespace
-    r"\s*" => { },
-}
-
-pub Expr: Expr = {
-    #[precedence(level="0")] 
-    Var,
-    #[precedence(level="1")] #[assoc(side="left")]
-    AngleBrackets,
-    #[precedence(level="2")] #[assoc(side="left")] 
-    SquareBrackets,
-    #[precedence(level="3")] #[assoc(side="right")]
-    RoundBrackets,
-};
-
-
-// Star: Expr = {
-//     "*" => ast::Expr::Star
-// };
-
-Var: Expr = {
-    <name:Name> => ast::Expr::Var(name),
-};
-
-Name: String = {
-    r"[a-zA-Z0-9_']+" => <>.to_string()
-};
-
-Brackets: Expr = { 
-  SquareBrackets,
-  AngleBrackets,
-  RoundBrackets,
-};
-
-SquareBrackets: Expr = {
-  "[" <b:Brackets?> <name:Name?> "," <b2:Brackets?> <name2:Name?> "]" => ast::Expr::SquareBrackets(Box::new(name), Box::new(b), Box::new(b2)),
-  "[" <b:Brackets?> <name:Name?>  "]" => ast::Expr::SquareBrackets(Box::new(name), Box::new(b), Box::new(None)),
-};
-
-AngleBrackets: Expr = {
-  "<"  <b:Brackets?><name:Name> ">" => ast::Expr::AngleBracket(Box::new(name), Box::new(b)),
-};
-
-RoundBrackets: Expr = {
-  <b0:Brackets?> <name:Name> "(" <b:Brackets?> <e:Name?> ")" => 
-  ast::Expr::RoundBrackets(Box::new(name), Box::new(b0), vec![(Box::new(b), Box::new(e))]),
-  <b0:Brackets?> <name:Name> "(" <b:Brackets?> <e:Name?> "," <b2:Brackets?> <e2:Name?>  ")" => 
-  ast::Expr::RoundBrackets(Box::new(name), Box::new(b0), vec![(Box::new(b), Box::new(e)), (Box::new(b2), Box::new(e2))]),
-  <b0:Brackets?> <name:Name> "(" <b:Brackets?> <e:Name?> "," <b2:Brackets?> <e2:Name?>  "," <b3:Brackets?> <e3:Name?>  ")" => 
-  ast::Expr::RoundBrackets(Box::new(name), Box::new(b0), vec![(Box::new(b), Box::new(e)), (Box::new(b2), Box::new(e2)), (Box::new(b3), Box::new(e3))]),
-};
+Name:      String = { r"[a-zA-Z][a-zA-Z\d]*" => <>.to_string() };
+Universe:    Henk = { <n:r"\*[\d]+"> => Henk::Universe(i64::from_str_radix(n,10).unwrap()), <n:r"\*"> => Henk::Universe(0), };
+Variable:    Henk = { <n:Name> => Henk::Variable(n), };
+Unit:        Henk = { <l:"("> <e:Expr> <r:")"> => e, };
+Lambda:      Henk = { <l:"("> <v:Name> <s:":"> <t:Expr> <r:")"> <e:LExpr> => Henk::Lambda(v,Box::new(t),Box::new(e)), };
+Forall:      Henk = { <l:"["> <v:Name> <s:":"> <t:Expr> <r:"]"> <e:LExpr> => Henk::Forall(v,Box::new(t),Box::new(e)), };
+LExpr:       Henk = { Variable, Unit, Lambda, Forall, };
+Application: Henk = { <l:Expr> <r:LExpr> => Henk::Application(Box::new(l),Box::new(r)), };
+Arrow:       Henk = { <t:Expr> <a:"->"> <e:LExpr> => Henk::Forall("".to_string(),Box::new(t),Box::new(e)), };
+pub    Expr: Henk = { Universe, Variable, Application, Lambda, Forall, Arrow };
