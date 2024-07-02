@@ -3,7 +3,7 @@ use crate::ast::Henk;
 grammar; // AUT = U | V | [ V : AUT ) AUT | ( V : AUT ) AUT | AUT AUT | ( AUT )
 
 Name:      String = { r"[a-zA-Z_][a-zA-Z_\d]*" => <>.to_string() };
-Universe:    Henk = { <n:r"\*[\d]+"> => Henk::U(i64::from_str_radix(n,10).unwrap()), <n:r"\*"> => Henk::U(0), };
+Universe:    Henk = { <n:r"\*[\d]+"> => Henk::U(i64::from_str_radix(&n[1..],10).unwrap()), <n:r"\*"> => Henk::U(0), };
 Variable:    Henk = { <n:Name> => Henk::Var(n), };
 Unit:        Henk = { <l:"("> <e:Expr> <r:")"> => e, };
 Lambda:      Henk = { <l:"("> <v:Name> <s:":"> <t:Expr> <r:")"> <e:LExpr> => Henk::Lam(v,Box::new(t),Box::new(e)), };
