@@ -1,8 +1,8 @@
 
 use crate::ast::Henk;
-grammar; // AUT = U | V | [ V : AUT ) AUT | ( V : AUT ) AUT | AUT AUT | ( AUT ) | AUT -> AUT
+grammar; // AUT = U | V | [ V : AUT ) AUT | ( V : AUT ) AUT | AUT AUT | ( AUT )
 
-Name:      String = { r"[a-zA-Z][a-zA-Z\d]*" => <>.to_string() };
+Name:      String = { r"[a-zA-Z_][a-zA-Z_\d]*" => <>.to_string() };
 Universe:    Henk = { <n:r"\*[\d]+"> => Henk::U(i64::from_str_radix(n,10).unwrap()), <n:r"\*"> => Henk::U(0), };
 Variable:    Henk = { <n:Name> => Henk::Var(n), };
 Unit:        Henk = { <l:"("> <e:Expr> <r:")"> => e, };
@@ -10,5 +10,4 @@ Lambda:      Henk = { <l:"("> <v:Name> <s:":"> <t:Expr> <r:")"> <e:LExpr> => Hen
 Forall:      Henk = { <l:"["> <v:Name> <s:":"> <t:Expr> <r:"]"> <e:LExpr> => Henk::Pi(v,Box::new(t),Box::new(e)), };
 LExpr:       Henk = { Variable, Universe, Unit, Lambda, Forall, };
 Application: Henk = { <l:Expr> <r:LExpr> => Henk::App(Box::new(l),Box::new(r)), };
-Arrow:       Henk = { <t:Expr> <a:"->"> <e:LExpr> => Henk::Pi("".to_string(),Box::new(t),Box::new(e)), };
-pub    Expr: Henk = { Universe, Variable, Arrow, Application, Lambda, Forall, Unit, };
+pub    Expr: Henk = { Universe, Variable, Application, Lambda, Forall, };
