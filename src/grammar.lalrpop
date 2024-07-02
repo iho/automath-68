@@ -11,4 +11,4 @@ Forall:      Henk = { <l:"["> <v:Name> <s:":"> <t:Expr> <r:"]"> <e:LExpr> => Hen
 LExpr:       Henk = { Variable, Unit, Lambda, Forall, };
 Application: Henk = { <l:Expr> <r:LExpr> => Henk::Application(Box::new(l),Box::new(r)), };
 Arrow:       Henk = { <t:Expr> <a:"->"> <e:LExpr> => Henk::Forall("".to_string(),Box::new(t),Box::new(e)), };
-pub    Expr: Henk = { Universe, Variable, Application, Lambda, Forall, Arrow };
+pub    Expr: Henk = { Universe, Variable, Application, Lambda, Forall, Unit, Arrow };
