@@ -80,8 +80,10 @@ impl Henk {
     // And the real implementation of the type checking.
     // We need to store typing information in a map called `context`.
     pub fn type_check_with_context(self, context: HashMap<String, Henk>) -> Result<Henk, String> {
+        println!("Type checking: {}", self);
+        println!("Context: {:?}", context);
         match self {
-            Henk::Universe(_) => Err("Hello, I am little error.".to_string()),
+            Henk::Universe(n) => Ok(Henk::Universe(n + 1)),
             // Simply lookup the context if I hit a variable.
             Henk::Variable(v) => match context.get(&v) {
                 Some(ty) => Ok(ty.clone()),

@@ -3,7 +3,10 @@ use crate::ast::Henk;
 grammar; // AUT-68 = U | I | [ I : PTS ) PTS | ( I : PTS ) PTS | PTS PTS | ( PTS ) | PTS -> PTS
 
 Name:      String = { r"[a-zA-Z][a-zA-Z\d]*" => <>.to_string() };
-Universe:    Henk = { <n:r"\*[\d]+"> => Henk::Universe(i64::from_str_radix(n,10).unwrap()), <n:r"\*"> => Henk::Universe(0), };
+Universe:    Henk = { 
+    <n:r"\*[\d]+"> => Henk::Universe(n[1..].parse().unwrap()), 
+    <n:r"\*"> => Henk::Universe(0), 
+};
 Variable:    Henk = { <n:Name> => Henk::Variable(n), };
 Unit:        Henk = { <l:"("> <e:Expr> <r:")"> => e, };
 Lambda:      Henk = { <l:"("> <v:Name> <s:":"> <t:Expr> <r:")"> <e:LExpr> => Henk::Lambda(v,Box::new(t),Box::new(e)), };
@@ -12,3 +15,4 @@ LExpr:       Henk = { Variable, Unit, Lambda, Forall, };
 Application: Henk = { <l:Expr> <r:LExpr> => Henk::Application(Box::new(l),Box::new(r)), };
 Arrow:       Henk = { <t:Expr> <a:"->"> <e:LExpr> => Henk::Forall("".to_string(),Box::new(t),Box::new(e)), };
 pub    Expr: Henk = { Universe, Variable, Application, Lambda, Forall, Arrow };
+
