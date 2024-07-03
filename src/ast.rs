@@ -400,6 +400,7 @@ impl Henk {
     // Alpha equality between types.
     pub fn alpha_eq(&self, another: &Henk) -> bool {
         match (self, another) {
+            (&Henk::Universe(v1), &Henk::Universe(v2)) => v1 == v2,
             (&Henk::Variable(ref v1), &Henk::Variable(ref v2)) => v1 == v2,
             (
                 &Henk::Application(ref left1, ref right1),

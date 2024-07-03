@@ -10,9 +10,6 @@ fn print(s: &str) {
 fn main() {
    print("(x:*) x");
    print("(x:*11) x");
-   print("(A: *) (Head: A) (Tail: [List: *] [Cons: A -> List -> List] [Nil: List] List)");
-   print("(List: *) (Cons: A -> List -> List) (Nil: List) Cons Head (Tail List Cons Nil)");
-   // print("[A:*][B:A] (A B)");
-   // print("(A:*)(H:A)(T:[L:*][C:A->(L->L)][N:L]L)(L:*)(C:A->(L->L))(N:L) C H (T L C N)");
+   print("(A:*)(H:A)(T:[L:*][C:[_:A][_:L]L][N:L]L)(L:*)(C:[_:A][_:L]L)(N:L)(C H (T L C N))");
+   print("(A: *) (Head: A) (Tail: [List: *] [Cons: [_:A] [_: List] List] [Nil: List] List) (List: *) (Cons: [_:A] [_: List] List) (Nil: List) (Cons Head (Tail List Cons Nil))");
 }
-
