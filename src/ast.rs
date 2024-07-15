@@ -13,19 +13,6 @@ pub enum Henk {
     Forall(String, Box<Henk>, Box<Henk>),
 }
 
-impl Display for Henk {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use Henk::*;
-        match *self {
-            Variable(ref str) => write!(f, "{}", str),
-            Application(ref left, ref right) => write!(f, "({} {})", left, right),
-            Lambda(ref bound, ref ty, ref inner) => write!(f, "({}: {}) {}", bound, ty, inner),
-            Forall(ref bound, ref left, ref right) => { write!(f, "[{}: {}] {}", bound, left, right) }
-            Universe(i) => write!(f, "Universe {}", i),
-        }
-    }
-}
-
 impl Henk {
 
     pub fn type_check(self) -> Result<Henk, String> {
@@ -34,7 +21,7 @@ impl Henk {
     }
 
     pub fn type_check_with_context(self, context: HashMap<String, Henk>) -> Result<Henk, String> {
-//        println!("Context: {:?}", context);
+//      println!("Context: {:?}", context);
         match self {
             Henk::Universe(n) => Ok(Henk::Universe(n + 1)),
             Henk::Variable(v) => match context.get(&v) {
@@ -102,8 +89,10 @@ impl Henk {
                         if used.contains(&unused) { unused.push_str("'") }
                         else {
                             let renamed =
-                            if switch == 0 { Henk::Lambda(unused.clone(), Box::new(left.clone().substitute(bound, &Henk::Variable(unused.clone()), )), Box::new(right.clone().substitute(bound, &&Henk::Variable(unused)), ), ) }
-                                      else { Henk::Forall(unused.clone(), Box::new(left.clone().substitute(bound,&&&Henk::Variable(unused.clone()),)), Box::new(right.clone().substitute(bound, &&Henk::Variable(unused)), ), ) };
+                            if switch == 0 { Henk::Lambda(unused.clone(), Box::new(left.clone().substitute(bound,
+                                             &Henk::Variable(unused.clone()), )), Box::new(right.clone().substitute(bound, &&Henk::Variable(unused)), ), ) }
+                                      else { Henk::Forall(unused.clone(), Box::new(left.clone().substitute(bound,
+                                             &&&Henk::Variable(unused.clone()),)), Box::new(right.clone().substitute(bound, &&Henk::Variable(unused)), ), ) };
                             return renamed.substitute(from, to);
                         }
                     }
@@ -148,13 +137,26 @@ impl Henk {
             (&Henk::Universe(v1), &Henk::Universe(v2)) => v1 == v2,
             (&Henk::Variable(ref v1), &Henk::Variable(ref v2)) => v1 == v2,
             (&Henk::Application(ref left1, ref right1),&Henk::Application(ref left2, ref right2),) => left1.alpha_eq(&left2) && right1.alpha_eq(&right2),
-            (&Henk::Lambda(ref bound1, ref ty1, ref inner1),&Henk::Lambda(ref bound2, ref ty2, ref inner2),) => { ty1.alpha_eq(ty2) && inner1.alpha_eq(&inner2.clone().substitute(&bound2, &&&Henk::Variable(bound1.clone())),) }
-            (&Henk::Forall(ref bound1, ref left1, ref right1),&Henk::Forall(ref bound2, ref left2, ref right2),) => { left1.alpha_eq(left2) && right1.alpha_eq(&right2.clone().substitute(&bound2, &Henk::Variable(bound1.clone())),) }
+            (&Henk::Lambda(ref bound1, ref left1, ref right1), &Henk::Lambda(ref bound2, ref left2, ref right2),) => { left1.alpha_eq(left2) && right1.alpha_eq(&right2.clone().substitute(&bound2, &&&Henk::Variable(bound1.clone())),) }
+            (&Henk::Forall(ref bound1, ref left1, ref right1), &Henk::Forall(ref bound2, ref left2, ref right2),) => { left1.alpha_eq(left2) && right1.alpha_eq(&right2.clone().substitute(&bound2, &Henk::Variable(bound1.clone())),) }
             _ => false,
         }
     }
 
     pub fn beta_eq(&self, another: &Henk) -> bool {
         self.clone().nf().alpha_eq(&another.clone().nf())
+    }
+}
+
+impl Display for Henk {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use Henk::*;
+        match *self {
+            Universe(i)                            => write!(f, "Universe {}", i),
+            Variable(ref str)                      => write!(f, "{}", str),
+            Application(ref left, ref right)       => write!(f, "({} {})", left, right),
+            Lambda(ref bound, ref left, ref right) => write!(f, "({}: {}) {}", bound, left, right),
+            Forall(ref bound, ref left, ref right) => write!(f, "[{}: {}] {}", bound, left, right),
+        }
     }
 }
