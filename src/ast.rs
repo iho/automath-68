@@ -86,62 +86,44 @@ impl Henk {
     }
 
     pub fn substitute(self, from: &String, to: &Henk) -> Henk {
+        fn  substitute_closure<'a>(from: &String, to: &Henk, bound: &'a String, left: &'a Box<Henk>, right: &'a Box<Henk>, switch: i32) -> Henk {
+            if bound == from {
+                if switch == 0 { Henk::Lambda(bound.clone(),Box::new(left.clone().substitute(from, to)),right.clone(),) }
+                          else { Henk::Forall(bound.clone(),Box::new(left.clone().substitute(from, to)),right.clone(),) }
+            } else {
+                if !to.free_vars().contains(bound) {
+                   if switch == 0 { Henk::Lambda(bound.clone(), Box::new(left.clone().substitute(from, to)), Box::new(right.clone().substitute(from, to)),) }
+                             else { Henk::Forall(bound.clone(), Box::new(left.clone().substitute(from, to)), Box::new(right.clone().substitute(from, to)),) }
+                } else {
+                    let mut unused: String = bound.clone();
+                    unused.push_str("'");
+                    loop {
+                        let used: HashSet<&String> = right.free_vars().union(&to.free_vars()).cloned().collect();
+                        if used.contains(&unused) { unused.push_str("'") }
+                        else {
+                            let renamed =
+                            if switch == 0 { Henk::Lambda(unused.clone(), Box::new(left.clone().substitute(bound, &Henk::Variable(unused.clone()), )), Box::new(right.clone().substitute(bound, &&Henk::Variable(unused)), ), ) }
+                                      else { Henk::Forall(unused.clone(), Box::new(left.clone().substitute(bound,&&&Henk::Variable(unused.clone()),)), Box::new(right.clone().substitute(bound, &&Henk::Variable(unused)), ), ) };
+                            return renamed.substitute(from, to);
+                        }
+                    }
+                }
+            }
+        }
         match self {
             Henk::Universe(v) => Henk::Universe(v),
             Henk::Variable(v) => { if v == *from { to.clone() } else { Henk::Variable(v) } }
             Henk::Application(left, right) => { Henk::Application(Box::new(left.substitute(from, to)), Box::new(right.substitute(from, to))) }
-            Henk::Lambda(ref bound, ref ty, ref inner) => {
-                if bound == from { Henk::Lambda(bound.clone(),Box::new(ty.clone().substitute(from, to)),inner.clone(),) }
-                else {
-                    if !to.free_vars().contains(bound) { Henk::Lambda(bound.clone(),Box::new(ty.clone().substitute(from, to)),Box::new(inner.clone().substitute(from, to)),) }
-                    else {
-                        let mut unused: String = bound.clone();
-                        unused.push_str("'");
-                        loop {
-                            let used: HashSet<&String> = inner.free_vars().union(&to.free_vars()).cloned().collect();
-                            if used.contains(&unused) { unused.push_str("'") }
-                            else {
-                                let renamed = Henk::Lambda(unused.clone(), Box::new(ty.clone().substitute(bound, &Henk::Variable(unused.clone()), )),
-                                    Box::new(inner.clone().substitute(bound, &&Henk::Variable(unused)), ), );
-                                return renamed.substitute(from, to);
-                            }
-                        }
-                    }
-                }
-            }
-            Henk::Forall(ref bound, ref left, ref right) => {
-                if bound == from { Henk::Forall(bound.clone(),Box::new(left.clone().substitute(from, to)),right.clone(),) }
-                else {
-                    if !to.free_vars().contains(bound) { Henk::Forall(bound.clone(), Box::new(left.clone().substitute(from, to)), Box::new(right.clone().substitute(from, to)),) }
-                    else {
-                        let mut unused: String = bound.clone();
-                        unused.push_str("'");
-                        loop {
-                            let used: HashSet<&String> = right.free_vars().union(&to.free_vars()).cloned().collect();
-                            if used.contains(&unused) { unused.push_str("'") } else {
-                                let renamed = Henk::Forall(unused.clone(), Box::new(left.clone().substitute(bound,&&&Henk::Variable(unused.clone()),)), Box::new(right.clone().substitute(bound, &&Henk::Variable(unused)),), );
-                                return renamed.substitute(from, to);
-                            }
-                        }
-                    }
-                }
-            }
+            Henk::Lambda(ref bound, ref left, ref right) => {  substitute_closure(from, to, bound, left, right, 0) }
+            Henk::Forall(ref bound, ref left, ref right) => {  substitute_closure(from, to, bound, left, right, 1) }
         }
     }
 
     pub fn whnf(self) -> Henk {
         fn spine(leftmost: Henk, stack: &[Henk]) -> Henk {
             match (leftmost, stack) {
-                (Henk::Application(left, right), _) => {
-                    let mut new_stack: Vec<Henk> = stack.into();
-                    new_stack.push(*right);
-                    spine(*left, &new_stack)
-                }
-                (Henk::Lambda(ref from, _, ref inner), ref stack) if !stack.is_empty() => {
-                    let mut new_stack: Vec<Henk> = (*stack).into();
-                    let right = new_stack.pop().unwrap();
-                    spine(inner.clone().substitute(&from, &right), &new_stack)
-                }
+                (Henk::Application(left, right), _) => { let mut new_stack: Vec<Henk> = stack.into(); new_stack.push(*right); spine(*left, &new_stack) }
+                (Henk::Lambda(ref from, _, ref inner), ref stack) if !stack.is_empty() => { let mut new_stack: Vec<Henk> = (*stack).into(); let right = new_stack.pop().unwrap(); spine(inner.clone().substitute(&from, &right), &new_stack) }
                 (leftmost, _) => stack.iter().fold(leftmost, |l, r| Henk::Application(Box::new(l), Box::new(r.clone()))),
             }
         }
@@ -151,23 +133,10 @@ impl Henk {
     pub fn nf(self) -> Henk {
         fn spine(leftmost: Henk, stack: &[Henk]) -> Henk {
             match (leftmost, stack) {
-                (Henk::Application(left, right), _) => {
-                    let mut new_stack: Vec<Henk> = stack.into();
-                    new_stack.push(*right);
-                    spine(*left, &new_stack)
-                }
-                (Henk::Lambda(ref from, ref ty, ref inner), ref stack) if stack.is_empty() => {
-                    Henk::Lambda(from.clone(), Box::new(ty.clone().nf()), Box::new(inner.clone().nf()), )
-                }
-                (Henk::Lambda(ref from, _, ref inner), ref stack) => {
-                    let mut new_stack: Vec<Henk> = (*stack).into();
-                    let right = new_stack.pop().unwrap();
-                    spine(inner.clone().substitute(&from, &right), &new_stack)
-                }
-                (Henk::Forall(ref bound, ref left, ref inner), ref stack) => stack.iter().fold(
-                    Henk::Forall(bound.clone(), Box::new(left.clone().nf()), Box::new(inner.clone().nf()), ),
-                    |l, r| Henk::Application(Box::new(l), Box::new(r.clone().nf()))
-                ),
+                (Henk::Application(left, right), _) => { let mut new_stack: Vec<Henk> = stack.into(); new_stack.push(*right); spine(*left, &new_stack) }
+                (Henk::Lambda(ref from, ref ty, ref inner), ref stack) if stack.is_empty() => { Henk::Lambda(from.clone(), Box::new(ty.clone().nf()), Box::new(inner.clone().nf()), ) }
+                (Henk::Lambda(ref from, _, ref inner), ref stack) => { let mut new_stack: Vec<Henk> = (*stack).into(); let right = new_stack.pop().unwrap(); spine(inner.clone().substitute(&from, &right), &new_stack) }
+                (Henk::Forall(ref bound, ref left, ref inner), ref stack) => stack.iter().fold(Henk::Forall(bound.clone(), Box::new(left.clone().nf()), Box::new(inner.clone().nf()), ), |l, r| Henk::Application(Box::new(l), Box::new(r.clone().nf()))),
                 (leftmost, _) => stack.iter().fold(leftmost, |l, r| Henk::Application(Box::new(l), Box::new(r.clone().nf())) ),
             }
         }
