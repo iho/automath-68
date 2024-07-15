@@ -64,7 +64,7 @@ impl Henk {
                 let mut new_context = context;
                 new_context.insert(bound.clone(), *left.clone());
                 let right_kind = right.clone().type_check_with_context(new_context).map(Henk::whnf)?;
-                Ok(Henk::Forall(bound.clone(), left.clone(), right))
+                Ok(right_kind)
             }
         }
     }
