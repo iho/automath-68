@@ -73,38 +73,33 @@ impl Henk {
     }
 
     pub fn substitute(self, from: &String, to: &Henk) -> Henk {
-        fn  substitute_closure<'a>(from: &String, to: &Henk, bound: &'a String, left: &'a Box<Henk>, right: &'a Box<Henk>, switch: i32) -> Henk {
-            if bound == from {
-                if switch == 0 { Henk::Lambda(bound.clone(),Box::new(left.clone().substitute(from, to)),right.clone(),) }
-                          else { Henk::Forall(bound.clone(),Box::new(left.clone().substitute(from, to)),right.clone(),) }
-            } else {
-                if !to.free_vars().contains(bound) {
-                   if switch == 0 { Henk::Lambda(bound.clone(), Box::new(left.clone().substitute(from, to)), Box::new(right.clone().substitute(from, to)),) }
-                             else { Henk::Forall(bound.clone(), Box::new(left.clone().substitute(from, to)), Box::new(right.clone().substitute(from, to)),) }
-                } else {
-                    let mut unused: String = bound.clone();
-                    unused.push_str("'");
-                    loop {
-                        let used: HashSet<&String> = right.free_vars().union(&to.free_vars()).cloned().collect();
-                        if used.contains(&unused) { unused.push_str("'") }
-                        else {
-                            let renamed =
-                            if switch == 0 { Henk::Lambda(unused.clone(), Box::new(left.clone().substitute(bound,
-                                             &Henk::Variable(unused.clone()), )), Box::new(right.clone().substitute(bound, &&Henk::Variable(unused)), ), ) }
-                                      else { Henk::Forall(unused.clone(), Box::new(left.clone().substitute(bound,
-                                             &Henk::Variable(unused.clone()),)), Box::new(right.clone().substitute(bound, &&Henk::Variable(unused)), ), ) };
-                            return renamed.substitute(from, to);
+        fn lambda(bound: String, left: Box<Henk>, right: Box<Henk>) -> Henk { Henk::Lambda(bound, left, right) }
+        fn forall(bound: String, left: Box<Henk>, right: Box<Henk>) -> Henk { Henk::Forall(bound, left, right) }
+        fn substitute_closure<'a>(from: &String, to: &Henk, bound: &'a String, left: &'a Box<Henk>, right: &'a Box<Henk>,
+            fun: fn (bound: String, left: Box<Henk>, right: Box<Henk>) -> Henk) -> Henk {
+            if bound == from { fun(bound.clone(),Box::new(left.clone().substitute(from, to)),right.clone(),) }
+            else { if !to.free_vars().contains(bound) { fun(bound.clone(), Box::new(left.clone().substitute(from, to)), Box::new(right.clone().substitute(from, to)),) }
+                   else {
+                        let mut unused: String = bound.clone();
+                        unused.push_str("'");
+                        loop {
+                            let used: HashSet<&String> = right.free_vars().union(&to.free_vars()).cloned().collect();
+                            if used.contains(&unused) { unused.push_str("'") }
+                            else { let renamed = fun(unused.clone(),
+                                       Box::new(left.clone().substitute(bound, &Henk::Variable(unused.clone()), )),
+                                       Box::new(right.clone().substitute(bound, &Henk::Variable(unused)), ), );
+                                   return renamed.substitute(from, to);
+                            }
                         }
-                    }
-                }
+                   }
             }
         }
         match self {
             Henk::Universe(v) => Henk::Universe(v),
             Henk::Variable(v) => { if v == *from { to.clone() } else { Henk::Variable(v) } }
             Henk::Application(left, right) => { Henk::Application(Box::new(left.substitute(from, to)), Box::new(right.substitute(from, to))) }
-            Henk::Lambda(ref bound, ref left, ref right) => {  substitute_closure(from, to, bound, left, right, 0) }
-            Henk::Forall(ref bound, ref left, ref right) => {  substitute_closure(from, to, bound, left, right, 1) }
+            Henk::Lambda(ref bound, ref left, ref right) => {  substitute_closure(from, to, bound, left, right, lambda) }
+            Henk::Forall(ref bound, ref left, ref right) => {  substitute_closure(from, to, bound, left, right, forall) }
         }
     }
 
