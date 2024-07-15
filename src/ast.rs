@@ -92,7 +92,7 @@ impl Henk {
                             if switch == 0 { Henk::Lambda(unused.clone(), Box::new(left.clone().substitute(bound,
                                              &Henk::Variable(unused.clone()), )), Box::new(right.clone().substitute(bound, &&Henk::Variable(unused)), ), ) }
                                       else { Henk::Forall(unused.clone(), Box::new(left.clone().substitute(bound,
-                                             &&&Henk::Variable(unused.clone()),)), Box::new(right.clone().substitute(bound, &&Henk::Variable(unused)), ), ) };
+                                             &Henk::Variable(unused.clone()),)), Box::new(right.clone().substitute(bound, &&Henk::Variable(unused)), ), ) };
                             return renamed.substitute(from, to);
                         }
                     }
@@ -137,7 +137,7 @@ impl Henk {
             (&Henk::Universe(v1), &Henk::Universe(v2)) => v1 == v2,
             (&Henk::Variable(ref v1), &Henk::Variable(ref v2)) => v1 == v2,
             (&Henk::Application(ref left1, ref right1),&Henk::Application(ref left2, ref right2),) => left1.alpha_eq(&left2) && right1.alpha_eq(&right2),
-            (&Henk::Lambda(ref bound1, ref left1, ref right1), &Henk::Lambda(ref bound2, ref left2, ref right2),) => { left1.alpha_eq(left2) && right1.alpha_eq(&right2.clone().substitute(&bound2, &&&Henk::Variable(bound1.clone())),) }
+            (&Henk::Lambda(ref bound1, ref left1, ref right1), &Henk::Lambda(ref bound2, ref left2, ref right2),) => { left1.alpha_eq(left2) && right1.alpha_eq(&right2.clone().substitute(&bound2, &Henk::Variable(bound1.clone())),) }
             (&Henk::Forall(ref bound1, ref left1, ref right1), &Henk::Forall(ref bound2, ref left2, ref right2),) => { left1.alpha_eq(left2) && right1.alpha_eq(&right2.clone().substitute(&bound2, &Henk::Variable(bound1.clone())),) }
             _ => false,
         }
