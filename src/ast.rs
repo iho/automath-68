@@ -19,8 +19,8 @@ impl Display for Henk {
         match *self {
             Variable(ref str) => write!(f, "{}", str),
             Application(ref left, ref right) => write!(f, "({} {})", left, right),
-            Lambda(ref bound, ref ty, ref inner) => write!(f, "(\\{}: {}. {})", bound, ty, inner),
-            Forall(ref bound, ref left, ref right) => { write!(f, "({}: {}) -> {}", bound, left, right) }
+            Lambda(ref bound, ref ty, ref inner) => write!(f, "({}: {}) {}", bound, ty, inner),
+            Forall(ref bound, ref left, ref right) => { write!(f, "[{}: {}] {}", bound, left, right) }
             Universe(i) => write!(f, "Universe {}", i),
         }
     }
@@ -29,13 +29,12 @@ impl Display for Henk {
 impl Henk {
 
     pub fn type_check(self) -> Result<Henk, String> {
-        debug!("Start type checking.");
+        println!("AUT-68: {}", self);
         self.type_check_with_context(HashMap::new())
     }
 
     pub fn type_check_with_context(self, context: HashMap<String, Henk>) -> Result<Henk, String> {
-        println!("Type checking: {}", self);
-        println!("Context: {:?}", context);
+//        println!("Context: {:?}", context);
         match self {
             Henk::Universe(n) => Ok(Henk::Universe(n + 1)),
             Henk::Variable(v) => match context.get(&v) {
