@@ -9,5 +9,5 @@ Unit:        Henk = { <l:"("> <e:Expr> <r:")"> => e, };
 Lambda:      Henk = { <l:"("> <v:Name> <s:":"> <t:Expr> <r:")"> <e:LExpr> => Henk::Lambda(v,Box::new(t),Box::new(e)), };
 Forall:      Henk = { <l:"["> <v:Name> <s:":"> <t:Expr> <r:"]"> <e:LExpr> => Henk::Forall(v,Box::new(t),Box::new(e)), };
 LExpr:       Henk = { Variable, Universe, Unit, Lambda, Forall, };
-Application: Henk = { <l:Expr> <r:LExpr> => Henk::Application(Box::new(l),Box::new(r)), };
+Application: Henk = { <l:Expr> <r:LExpr> => Henk::App(Box::new(l),Box::new(r)), };
 pub    Expr: Henk = { LExpr, Application, };
