@@ -24,10 +24,8 @@ impl Henk {
 //      println!("Context: {:?}", context);
         match self {
             Henk::Universe(n) => Ok(Henk::Universe(n + 1)),
-            Henk::Variable(v) => match context.get(&v) {
-                Some(ty) => Ok(ty.clone()),
-                None => Err(format!("Cannot find variable {}.", &v)),
-            },
+            Henk::Forall(bound, left, right) => { Ok(Henk::Universe(0)) }
+            Henk::Variable(v) => match context.get(&v) { Some(ty) => Ok(ty.clone()), None => Err(format!("Cannot find variable {}.", &v)), },
             Henk::App(left, right) => {
                 match left.type_check_with_context(context.clone())? {
                     Henk::Forall(bound, ty_in, ty_out) => {
@@ -44,13 +42,6 @@ impl Henk {
                 new_context.insert(bound.clone(), *left.clone());
                 let right_type = right.type_check_with_context(new_context)?;
                 Ok(Henk::Forall(bound, left, Box::new(right_type)))
-            }
-            Henk::Forall(bound, left, right) => {
-                let left_type = left.clone().type_check_with_context(context.clone()).map(Henk::nf)?;
-                let mut new_context = context;
-                new_context.insert(bound.clone(), *left.clone());
-                let right_type = right.clone().type_check_with_context(new_context).map(Henk::nf)?;
-                Ok(right_type)
             }
         }
     }
