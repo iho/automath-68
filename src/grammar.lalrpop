@@ -8,6 +8,6 @@ Variable: Henk = { <n:Name> => Henk::Variable(n) };
 Lambda:   Henk = { <l:"("> <v:Name> <s:":"> <t:Expr> <r:")"> <e:Expr1> => Henk::Lambda(v,Box::new(t),Box::new(e)) };
 Forall:   Henk = { <l:"["> <v:Name> <s:":"> <t:Expr> <r:"]"> <e:Expr1> => Henk::Forall(v,Box::new(t),Box::new(e)) };
 Expr1:    Henk = { Lambda, Forall, Expr2 };
-Expr2:    Henk = { <l:Expr2> <r:Expr3> => Henk::App(Box::new(l),Box::new(r)), <x:Expr3> => x };
+Expr2:    Henk = { <l:Expr2> <r:Expr3> => Henk::App(Box::new(l),Box::new(r)), Expr3 };
 Expr3:    Henk = { Variable, Universe, <l:"("> <e:Expr1> <r:")"> => e };
 pub Expr: Henk = { Expr1 };
