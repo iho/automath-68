@@ -11,10 +11,10 @@ Variable: Henk = { <n:Name> => Henk::Variable(n) };
 Universe: Henk = { <n:r"\*[\d]+"> => Henk::Universe(i64::from_str_radix(&n[1..],10).unwrap()),
                    <n:r"\*"> => Henk::Universe(0) };
 
-Lambda:   Henk = { <l:"("> <v:Name> <s:":"> <t:Expr> <r:")"> <e:Expr1> =>
-                   Henk::Lambda(v,Box::new(t),Box::new(e)) };
-Forall:   Henk = { <l:"["> <v:Name> <s:":"> <t:Expr> <r:"]"> <e:Expr1> =>
-                   Henk::Forall(v,Box::new(t),Box::new(e)) };
+Lambda:   Henk = { <l:"("> <v:Name> <s:":"> <t:Expr> <r:")"> <e:Expr1> => Henk::Lambda(v,Box::new(t),Box::new(e)) };
+Forall:   Henk = { <l:"["> <v:Name> <s:":"> <t:Expr> <r:"]"> <e:Expr1> => Henk::Forall(v,Box::new(t),Box::new(e)) };
+
+// LR(1) Parsing Scheme
 
 Expr1:    Henk = { Lambda, Forall, Expr2 };
 Expr2:    Henk = { <l:Expr2> <r:Expr3> => Henk::App(Box::new(l),Box::new(r)), Expr3 };
